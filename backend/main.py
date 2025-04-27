@@ -227,7 +227,6 @@ async def telegram_auth(payload: dict):
     h = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
     if h != payload.get("hash"):
         raise HTTPException(status_code=403, detail="Invalid Telegram auth")
-    # По telegram_id ищем или создаём пользователя
     user_data = payload.get("user") or payload
     with get_db() as conn:
         c = conn.cursor()
@@ -239,8 +238,19 @@ async def telegram_auth(payload: dict):
                 (user_data["id"], user_data.get("first_name", ""), user_data.get("last_name", ""), user_data.get("phone", ""), 0)
             )
             conn.commit()
-        # Можно сразу возвращать данные пользователя (или JWT, если нужно)
-    return {"status": "ok", "telegram_id": user_data["id"]}
+            # Получаем только что созданного пользователя
+            c.execute("SELECT * FROM users WHERE telegram_id=?", (user_data["id"],))
+            row = c.fetchone()
+        # row = (id, telegram_id, first_name, last_name, phone, is_admin)
+        user = {
+            "id": row[0],
+            "telegram_id": row[1],
+            "first_name": row[2],
+            "last_name": row[3],
+            "phone": row[4],
+            "is_admin": bool(row[5]),
+        }
+    return user
 
 # Монтируем статические файлы ДО SPA-маршрута
 try:
