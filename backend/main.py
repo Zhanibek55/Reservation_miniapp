@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 from fastapi import Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+import sqlite3
+from db import get_db, init_db
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
