@@ -2,14 +2,14 @@ import os
 import json
 import httpx
 import logging
-from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import hmac
 import hashlib
 import time
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, Dict, Any, List
 from fastapi import Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
@@ -233,49 +233,7 @@ async def telegram_auth(payload: dict):
         # Можно сразу возвращать данные пользователя (или JWT, если нужно)
     return {"status": "ok", "telegram_id": user_data["id"]}
 
-# --- API МАРШРУТЫ ---
-
-# Главная страница и SPA-маршруты - должны быть ПОСЛЕ всех API-маршрутов
-@app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
-    logger.info(f"Serving SPA for path: {full_path}")
-    
-    # Проверяем, не является ли запрос API-запросом
-    if full_path.startswith("api/"):
-        logger.warning(f"API endpoint not found: {full_path}")
-        raise HTTPException(status_code=404, detail="API endpoint not found")
-    
-    # Пробуем разные пути к index.html
-    possible_paths = [
-        "../static/index.html",
-        "static/index.html",
-        "../miniapp-frontend/build/index.html",
-        "miniapp-frontend/build/index.html",
-        "/opt/render/project/src/static/index.html",
-        "/opt/render/project/src/backend/static/index.html"
-    ]
-    
-    for path in possible_paths:
-        try:
-            logger.info(f"Trying path: {path}")
-            if os.path.exists(path):
-                logger.info(f"Found index.html at: {path}")
-                return FileResponse(path)
-            else:
-                logger.warning(f"Path does not exist: {path}")
-        except Exception as e:
-            logger.error(f"Error serving {path}: {str(e)}")
-            continue
-    
-    # Если не нашли index.html, возвращаем информативную ошибку
-    logger.error("Frontend files not found after trying all paths")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Frontend files not found. Please check build process and file paths."}
-    )
-
-# Монтируем статические файлы ПОСЛЕ определения всех маршрутов
-# Пробуем разные пути к статическим файлам
+# Монтируем статические файлы ДО SPA-маршрута
 try:
     logger.info("Trying to mount static files from ../static")
     app.mount("/static", StaticFiles(directory="../static"), name="static")
@@ -325,5 +283,39 @@ except Exception as e:
                 logger.info("Successfully mounted /opt/render/project/src/backend/static as root")
             except Exception as e:
                 logger.error(f"Error mounting /opt/render/project/src/backend/static as root: {str(e)}")
+
+# --- API МАРШРУТЫ ---
+
+# Главная страница и SPA-маршруты - должны быть ПОСЛЕ всех API-маршрутов и монтирования статики
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    logger.info(f"Serving SPA for path: {full_path}")
+    if full_path.startswith("api/"):
+        logger.warning(f"API endpoint not found: {full_path}")
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+    possible_paths = [
+        "../static/index.html",
+        "static/index.html",
+        "../miniapp-frontend/build/index.html",
+        "miniapp-frontend/build/index.html",
+        "/opt/render/project/src/static/index.html",
+        "/opt/render/project/src/backend/static/index.html"
+    ]
+    for path in possible_paths:
+        try:
+            logger.info(f"Trying path: {path}")
+            if os.path.exists(path):
+                logger.info(f"Found index.html at: {path}")
+                return FileResponse(path)
+            else:
+                logger.warning(f"Path does not exist: {path}")
+        except Exception as e:
+            logger.error(f"Error serving {path}: {str(e)}")
+            continue
+    logger.error("Frontend files not found after trying all paths")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Frontend files not found. Please check build process and file paths."}
+    )
 
 # --- TODO: админка, ручное управление столами, статистика и т.д. ---
