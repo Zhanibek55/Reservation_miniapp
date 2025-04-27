@@ -22,6 +22,8 @@ from starlette.requests import Request as StarletteRequest
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("reservation-app")
 
+logger.info(f"Current working directory: {os.getcwd()}")
+
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
@@ -235,30 +237,34 @@ async def telegram_auth(payload: dict):
 
 # Монтируем статические файлы ДО SPA-маршрута
 try:
-    logger.info("Trying to mount static files from static")
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-    logger.info("Successfully mounted ./static")
+    # Абсолютный путь к папке static
+    static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
+    logger.info(f"Trying to mount static files from {static_dir}")
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    logger.info(f"Successfully mounted {static_dir}")
 except Exception as e:
-    logger.error(f"Error mounting ./static: {str(e)}")
+    logger.error(f"Error mounting {static_dir}: {str(e)}")
     try:
-        logger.info("Trying to mount static files from /opt/render/project/src/backend/static")
-        app.mount("/static", StaticFiles(directory="/opt/render/project/src/backend/static"), name="static")
-        logger.info("Successfully mounted /opt/render/project/src/backend/static")
+        fallback_dir = "/opt/render/project/src/backend/static"
+        logger.info(f"Trying to mount static files from {fallback_dir}")
+        app.mount("/static", StaticFiles(directory=fallback_dir), name="static")
+        logger.info(f"Successfully mounted {fallback_dir}")
     except Exception as e:
-        logger.error(f"Error mounting /opt/render/project/src/backend/static: {str(e)}")
+        logger.error(f"Error mounting {fallback_dir}: {str(e)}")
 
 try:
     logger.info("Trying to mount root files from static")
-    app.mount("/", StaticFiles(directory="static", html=True), name="root")
-    logger.info("Successfully mounted ./static as root")
+    app.mount("/", StaticFiles(directory=static_dir, html=True), name="root")
+    logger.info(f"Successfully mounted {static_dir} as root")
 except Exception as e:
-    logger.error(f"Error mounting ./static as root: {str(e)}")
+    logger.error(f"Error mounting {static_dir} as root: {str(e)}")
     try:
-        logger.info("Trying to mount root files from /opt/render/project/src/backend/static")
-        app.mount("/", StaticFiles(directory="/opt/render/project/src/backend/static", html=True), name="root")
-        logger.info("Successfully mounted /opt/render/project/src/backend/static as root")
+        fallback_dir = "/opt/render/project/src/backend/static"
+        logger.info(f"Trying to mount root files from {fallback_dir}")
+        app.mount("/", StaticFiles(directory=fallback_dir, html=True), name="root")
+        logger.info(f"Successfully mounted {fallback_dir} as root")
     except Exception as e:
-        logger.error(f"Error mounting /opt/render/project/src/backend/static as root: {str(e)}")
+        logger.error(f"Error mounting {fallback_dir} as root: {str(e)}")
 
 # --- API МАРШРУТЫ ---
 
