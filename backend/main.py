@@ -15,6 +15,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 import sqlite3
 from db import get_db, init_db
+from starlette.responses import Response
+from starlette.requests import Request as StarletteRequest
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -51,6 +53,14 @@ async def log_requests(request: Request, call_next):
             content=f"Internal Server Error: {str(e)}",
             status_code=500
         )
+
+# --- ЛОГИРОВАНИЕ ЗАПРОСОВ К СТАТИКЕ ---
+@app.middleware("http")
+async def log_static_requests(request: StarletteRequest, call_next):
+    if request.url.path.startswith("/static/"):
+        logger.info(f"STATIC REQUEST: {request.method} {request.url.path}")
+    response = await call_next(request)
+    return response
 
 # --- МОДЕЛИ ---
 class User(BaseModel):
