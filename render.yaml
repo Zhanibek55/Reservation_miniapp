@@ -5,7 +5,7 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       cd miniapp-frontend && npm install && npm run build && mkdir -p ../static && cp -r build/* ../static/
-    startCommand: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: ls -la && python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
