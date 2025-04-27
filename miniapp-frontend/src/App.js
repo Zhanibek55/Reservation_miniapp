@@ -38,18 +38,31 @@ function App() {
       const initData = window.Telegram.WebApp.initDataUnsafe;
       setTgUser(initData.user);
       // Авторизация через Telegram MiniApp
+      console.log('Sending initData to /auth/telegram:', initData);
       fetch("/auth/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(initData),
       })
-        .then((res) => res.json())
+        .then((res) => {
+          console.log('Response from /auth/telegram:', res);
+          return res.json().catch(e => {
+            console.error('Error parsing JSON:', e);
+            setAuthStatus("error-json");
+            throw e;
+          });
+        })
         .then((data) => {
+          console.log('Parsed data:', data);
           setAuthStatus(data.status);
         })
-        .catch(() => setAuthStatus("error"));
+        .catch((err) => {
+          console.error('Error during Telegram auth:', err);
+          setAuthStatus("error");
+        });
     } else {
       console.log('Telegram WebApp NOT detected!');
+      setAuthStatus("not-telegram");
     }
   }, []);
 
@@ -69,6 +82,12 @@ function App() {
         <BookingPage onSubmit={handleBookingSubmit} onCancel={() => setShowBooking(false)} />
       ) : authStatus === null ? (
         <div className="loader">Авторизация через Telegram...</div>
+      ) : authStatus === "not-telegram" ? (
+        <div className="error">
+          Откройте приложение через Telegram (мобильное приложение или <a href="https://web.telegram.org/k/" target="_blank" rel="noopener noreferrer">web.telegram.org/k</a>)
+        </div>
+      ) : authStatus === "error-json" ? (
+        <div className="error">Ошибка разбора ответа сервера. Попробуйте позже.</div>
       ) : (
         <div className="error">Ошибка авторизации через Telegram</div>
       )}
