@@ -11,7 +11,7 @@ import hashlib
 from dotenv import load_dotenv
 from fastapi import Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -157,17 +157,53 @@ async def telegram_auth(payload: dict):
 # Главная страница и SPA-маршруты - должны быть ПОСЛЕ всех API-маршрутов
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
-    try:
-        return FileResponse("../static/index.html")
-    except:
-        # Fallback для локальной разработки
+    # Проверяем, не является ли запрос API-запросом
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+    
+    # Пробуем разные пути к index.html
+    possible_paths = [
+        "../static/index.html",
+        "static/index.html",
+        "../miniapp-frontend/build/index.html",
+        "miniapp-frontend/build/index.html",
+        "/opt/render/project/src/static/index.html"
+    ]
+    
+    for path in possible_paths:
         try:
-            return FileResponse("static/index.html")
+            return FileResponse(path)
         except:
-            return {"detail": "Frontend not found. Please build the frontend first."}
+            continue
+    
+    # Если не нашли index.html, возвращаем информативную ошибку
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Frontend files not found. Please check build process and file paths."}
+    )
 
 # Монтируем статические файлы ПОСЛЕ определения всех маршрутов
-app.mount("/static", StaticFiles(directory="../static"), name="static")
-app.mount("/", StaticFiles(directory="../static", html=True), name="root")
+# Пробуем разные пути к статическим файлам
+try:
+    app.mount("/static", StaticFiles(directory="../static"), name="static")
+except:
+    try:
+        app.mount("/static", StaticFiles(directory="static"), name="static")
+    except:
+        try:
+            app.mount("/static", StaticFiles(directory="/opt/render/project/src/static"), name="static")
+        except Exception as e:
+            print(f"Error mounting static files: {e}")
+
+try:
+    app.mount("/", StaticFiles(directory="../static", html=True), name="root")
+except:
+    try:
+        app.mount("/", StaticFiles(directory="static", html=True), name="root")
+    except:
+        try:
+            app.mount("/", StaticFiles(directory="/opt/render/project/src/static", html=True), name="root")
+        except Exception as e:
+            print(f"Error mounting root files: {e}")
 
 # --- TODO: админка, ручное управление столами, статистика и т.д. ---

@@ -5,12 +5,27 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       cd miniapp-frontend && npm install && npm run build
+      echo "Current directory structure:"
       ls -la
+      echo "Creating static directory..."
       mkdir -p ../static
+      echo "Copying build files to static directory..."
       cp -r build/* ../static/
-      echo "Checking static directory content:"
+      echo "Static directory content:"
       ls -la ../static
-    startCommand: python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+      echo "Root directory structure after build:"
+      cd ..
+      ls -la
+    startCommand: |
+      echo "Starting server with debug info..."
+      echo "Current directory: $(pwd)"
+      echo "Directory structure:"
+      ls -la
+      echo "Static directory content:"
+      ls -la static || echo "Static directory not found"
+      echo "Backend directory content:"
+      ls -la backend || echo "Backend directory not found"
+      python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
