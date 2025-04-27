@@ -28,7 +28,8 @@ app.add_middleware(
 )
 
 # Раздача статики (React build)
-app.mount("/", StaticFiles(directory="../miniapp-frontend/build", html=True), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/", StaticFiles(directory="static", html=True), name="root")
 
 # --- МОДЕЛИ ---
 class User(BaseModel):
@@ -154,6 +155,6 @@ async def telegram_auth(payload: dict):
 # Главная страница и SPA-маршруты
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
-    return FileResponse("../miniapp-frontend/build/index.html")
+    return FileResponse("static/index.html")
 
 # --- TODO: админка, ручное управление столами, статистика и т.д. ---
