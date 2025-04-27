@@ -235,54 +235,30 @@ async def telegram_auth(payload: dict):
 
 # Монтируем статические файлы ДО SPA-маршрута
 try:
-    logger.info("Trying to mount static files from ../static")
-    app.mount("/static", StaticFiles(directory="../static"), name="static")
-    logger.info("Successfully mounted ../static")
+    logger.info("Trying to mount static files from static")
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    logger.info("Successfully mounted ./static")
 except Exception as e:
-    logger.error(f"Error mounting ../static: {str(e)}")
+    logger.error(f"Error mounting ./static: {str(e)}")
     try:
-        logger.info("Trying to mount static files from ./static")
-        app.mount("/static", StaticFiles(directory="static"), name="static")
-        logger.info("Successfully mounted ./static")
+        logger.info("Trying to mount static files from /opt/render/project/src/backend/static")
+        app.mount("/static", StaticFiles(directory="/opt/render/project/src/backend/static"), name="static")
+        logger.info("Successfully mounted /opt/render/project/src/backend/static")
     except Exception as e:
-        logger.error(f"Error mounting ./static: {str(e)}")
-        try:
-            logger.info("Trying to mount static files from /opt/render/project/src/static")
-            app.mount("/static", StaticFiles(directory="/opt/render/project/src/static"), name="static")
-            logger.info("Successfully mounted /opt/render/project/src/static")
-        except Exception as e:
-            logger.error(f"Error mounting /opt/render/project/src/static: {str(e)}")
-            try:
-                logger.info("Trying to mount static files from /opt/render/project/src/backend/static")
-                app.mount("/static", StaticFiles(directory="/opt/render/project/src/backend/static"), name="static")
-                logger.info("Successfully mounted /opt/render/project/src/backend/static")
-            except Exception as e:
-                logger.error(f"Error mounting /opt/render/project/src/backend/static: {str(e)}")
+        logger.error(f"Error mounting /opt/render/project/src/backend/static: {str(e)}")
 
 try:
-    logger.info("Trying to mount root files from ../static")
-    app.mount("/", StaticFiles(directory="../static", html=True), name="root")
-    logger.info("Successfully mounted ../static as root")
+    logger.info("Trying to mount root files from static")
+    app.mount("/", StaticFiles(directory="static", html=True), name="root")
+    logger.info("Successfully mounted ./static as root")
 except Exception as e:
-    logger.error(f"Error mounting ../static as root: {str(e)}")
+    logger.error(f"Error mounting ./static as root: {str(e)}")
     try:
-        logger.info("Trying to mount root files from ./static")
-        app.mount("/", StaticFiles(directory="static", html=True), name="root")
-        logger.info("Successfully mounted ./static as root")
+        logger.info("Trying to mount root files from /opt/render/project/src/backend/static")
+        app.mount("/", StaticFiles(directory="/opt/render/project/src/backend/static", html=True), name="root")
+        logger.info("Successfully mounted /opt/render/project/src/backend/static as root")
     except Exception as e:
-        logger.error(f"Error mounting ./static as root: {str(e)}")
-        try:
-            logger.info("Trying to mount root files from /opt/render/project/src/static")
-            app.mount("/", StaticFiles(directory="/opt/render/project/src/static", html=True), name="root")
-            logger.info("Successfully mounted /opt/render/project/src/static as root")
-        except Exception as e:
-            logger.error(f"Error mounting /opt/render/project/src/static as root: {str(e)}")
-            try:
-                logger.info("Trying to mount root files from /opt/render/project/src/backend/static")
-                app.mount("/", StaticFiles(directory="/opt/render/project/src/backend/static", html=True), name="root")
-                logger.info("Successfully mounted /opt/render/project/src/backend/static as root")
-            except Exception as e:
-                logger.error(f"Error mounting /opt/render/project/src/backend/static as root: {str(e)}")
+        logger.error(f"Error mounting /opt/render/project/src/backend/static as root: {str(e)}")
 
 # --- API МАРШРУТЫ ---
 
@@ -294,9 +270,7 @@ async def serve_spa(full_path: str):
         logger.warning(f"API endpoint not found: {full_path}")
         raise HTTPException(status_code=404, detail="API endpoint not found")
     possible_paths = [
-        "../static/index.html",
         "static/index.html",
-        "../miniapp-frontend/build/index.html",
         "miniapp-frontend/build/index.html",
         "/opt/render/project/src/static/index.html",
         "/opt/render/project/src/backend/static/index.html"
