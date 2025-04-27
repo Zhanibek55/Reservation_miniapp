@@ -1,24 +1,29 @@
+import os
+import json
+import httpx
+import logging
+from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import date, time, datetime
-import sqlite3
-from db import get_db, init_db
-import os
 import hmac
 import hashlib
+import time
 from dotenv import load_dotenv
 from fastapi import Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("reservation-app")
 
 load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 app = FastAPI()
 
-# CORS (для фронта)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,6 +31,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Middleware для логирования всех запросов
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Request path: {request.url.path}")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Request headers: {request.headers}")
+    
+    try:
+        response = await call_next(request)
+        logger.info(f"Response status code: {response.status_code}")
+        return response
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
+        return PlainTextResponse(
+            content=f"Internal Server Error: {str(e)}",
+            status_code=500
+        )
 
 # --- МОДЕЛИ ---
 class User(BaseModel):
@@ -44,10 +67,60 @@ class Reservation(BaseModel):
     id: int
     user_id: int
     table_id: int
-    date: date
-    time_start: time
-    time_end: time
+    date: str
+    time_start: str
+    time_end: str
     status: str  # pending, confirmed, declined, cancelled
+
+# Корневой маршрут для проверки работы API
+@app.get("/api/health")
+async def health_check():
+    logger.info("Health check endpoint called")
+    return {"status": "ok", "message": "API is working"}
+
+# Маршрут для проверки структуры директорий
+@app.get("/api/debug/dirs")
+async def debug_dirs():
+    logger.info("Debug dirs endpoint called")
+    result = {}
+    
+    # Проверяем текущую директорию
+    try:
+        current_dir = os.getcwd()
+        result["current_dir"] = current_dir
+        result["current_dir_files"] = os.listdir(current_dir)
+    except Exception as e:
+        result["current_dir_error"] = str(e)
+    
+    # Проверяем родительскую директорию
+    try:
+        parent_dir = os.path.dirname(current_dir)
+        result["parent_dir"] = parent_dir
+        result["parent_dir_files"] = os.listdir(parent_dir)
+    except Exception as e:
+        result["parent_dir_error"] = str(e)
+    
+    # Проверяем директорию static
+    try:
+        static_dir = os.path.join(current_dir, "static")
+        result["static_dir"] = static_dir
+        result["static_exists"] = os.path.exists(static_dir)
+        if os.path.exists(static_dir):
+            result["static_files"] = os.listdir(static_dir)
+    except Exception as e:
+        result["static_dir_error"] = str(e)
+    
+    # Проверяем директорию ../static
+    try:
+        static_parent_dir = os.path.join(parent_dir, "static")
+        result["static_parent_dir"] = static_parent_dir
+        result["static_parent_exists"] = os.path.exists(static_parent_dir)
+        if os.path.exists(static_parent_dir):
+            result["static_parent_files"] = os.listdir(static_parent_dir)
+    except Exception as e:
+        result["static_parent_dir_error"] = str(e)
+    
+    return result
 
 # --- ЭНДПОИНТЫ с SQLite ---
 @app.on_event("startup")
@@ -77,13 +150,13 @@ def get_tables():
         return [Table(id=row[0], number=row[1], active=bool(row[2])) for row in c.fetchall()]
 
 @app.get("/tables/status")
-def get_tables_status(date: date, time_start: time, time_end: time):
+def get_tables_status(date: str, time_start: str, time_end: str):
     with get_db() as conn:
         c = conn.cursor()
         c.execute("""
             SELECT table_id FROM reservations
             WHERE date=? AND NOT (time_end<=? OR time_start>=?)
-        """, (str(date), str(time_start), str(time_end)))
+        """, (date, time_start, time_end))
         busy = {row[0] for row in c.fetchall()}
         return {"busy": list(busy)}
 
@@ -95,13 +168,13 @@ def create_reservation(res: Reservation):
         c.execute("""
             SELECT 1 FROM reservations
             WHERE table_id=? AND date=? AND NOT (time_end<=? OR time_start>=?)
-        """, (res.table_id, str(res.date), str(res.time_start), str(res.time_end)))
+        """, (res.table_id, res.date, res.time_start, res.time_end))
         if c.fetchone():
             raise HTTPException(409, "Table is already booked for this slot")
         c.execute("""
             INSERT INTO reservations (user_id, table_id, date, time_start, time_end, status)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (res.user_id, res.table_id, str(res.date), str(res.time_start), str(res.time_end), res.status))
+        """, (res.user_id, res.table_id, res.date, res.time_start, res.time_end, res.status))
         conn.commit()
         return {"ok": True}
 
@@ -150,15 +223,14 @@ async def telegram_auth(payload: dict):
 
 # --- API МАРШРУТЫ ---
 
-# Раздача статики (React build)
-# Важно: сначала определяем API-маршруты, затем статику
-# Иначе FastAPI будет перехватывать все запросы статикой
-
 # Главная страница и SPA-маршруты - должны быть ПОСЛЕ всех API-маршрутов
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
+    logger.info(f"Serving SPA for path: {full_path}")
+    
     # Проверяем, не является ли запрос API-запросом
     if full_path.startswith("api/"):
+        logger.warning(f"API endpoint not found: {full_path}")
         raise HTTPException(status_code=404, detail="API endpoint not found")
     
     # Пробуем разные пути к index.html
@@ -172,11 +244,18 @@ async def serve_spa(full_path: str):
     
     for path in possible_paths:
         try:
-            return FileResponse(path)
-        except:
+            logger.info(f"Trying path: {path}")
+            if os.path.exists(path):
+                logger.info(f"Found index.html at: {path}")
+                return FileResponse(path)
+            else:
+                logger.warning(f"Path does not exist: {path}")
+        except Exception as e:
+            logger.error(f"Error serving {path}: {str(e)}")
             continue
     
     # Если не нашли index.html, возвращаем информативную ошибку
+    logger.error("Frontend files not found after trying all paths")
     return JSONResponse(
         status_code=500,
         content={"detail": "Frontend files not found. Please check build process and file paths."}
@@ -185,25 +264,41 @@ async def serve_spa(full_path: str):
 # Монтируем статические файлы ПОСЛЕ определения всех маршрутов
 # Пробуем разные пути к статическим файлам
 try:
+    logger.info("Trying to mount static files from ../static")
     app.mount("/static", StaticFiles(directory="../static"), name="static")
-except:
+    logger.info("Successfully mounted ../static")
+except Exception as e:
+    logger.error(f"Error mounting ../static: {str(e)}")
     try:
+        logger.info("Trying to mount static files from ./static")
         app.mount("/static", StaticFiles(directory="static"), name="static")
-    except:
+        logger.info("Successfully mounted ./static")
+    except Exception as e:
+        logger.error(f"Error mounting ./static: {str(e)}")
         try:
+            logger.info("Trying to mount static files from /opt/render/project/src/static")
             app.mount("/static", StaticFiles(directory="/opt/render/project/src/static"), name="static")
+            logger.info("Successfully mounted /opt/render/project/src/static")
         except Exception as e:
-            print(f"Error mounting static files: {e}")
+            logger.error(f"Error mounting /opt/render/project/src/static: {str(e)}")
 
 try:
+    logger.info("Trying to mount root files from ../static")
     app.mount("/", StaticFiles(directory="../static", html=True), name="root")
-except:
+    logger.info("Successfully mounted ../static as root")
+except Exception as e:
+    logger.error(f"Error mounting ../static as root: {str(e)}")
     try:
+        logger.info("Trying to mount root files from ./static")
         app.mount("/", StaticFiles(directory="static", html=True), name="root")
-    except:
+        logger.info("Successfully mounted ./static as root")
+    except Exception as e:
+        logger.error(f"Error mounting ./static as root: {str(e)}")
         try:
+            logger.info("Trying to mount root files from /opt/render/project/src/static")
             app.mount("/", StaticFiles(directory="/opt/render/project/src/static", html=True), name="root")
+            logger.info("Successfully mounted /opt/render/project/src/static as root")
         except Exception as e:
-            print(f"Error mounting root files: {e}")
+            logger.error(f"Error mounting /opt/render/project/src/static as root: {str(e)}")
 
 # --- TODO: админка, ручное управление столами, статистика и т.д. ---
