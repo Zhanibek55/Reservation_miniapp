@@ -27,10 +27,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Раздача статики (React build)
-app.mount("/static", StaticFiles(directory="../static"), name="static")
-app.mount("/", StaticFiles(directory="../static", html=True), name="root")
-
 # --- МОДЕЛИ ---
 class User(BaseModel):
     telegram_id: int
@@ -152,9 +148,26 @@ async def telegram_auth(payload: dict):
         # Можно сразу возвращать данные пользователя (или JWT, если нужно)
     return {"status": "ok", "telegram_id": user_data["id"]}
 
-# Главная страница и SPA-маршруты
+# --- API МАРШРУТЫ ---
+
+# Раздача статики (React build)
+# Важно: сначала определяем API-маршруты, затем статику
+# Иначе FastAPI будет перехватывать все запросы статикой
+
+# Главная страница и SPA-маршруты - должны быть ПОСЛЕ всех API-маршрутов
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
-    return FileResponse("../static/index.html")
+    try:
+        return FileResponse("../static/index.html")
+    except:
+        # Fallback для локальной разработки
+        try:
+            return FileResponse("static/index.html")
+        except:
+            return {"detail": "Frontend not found. Please build the frontend first."}
+
+# Монтируем статические файлы ПОСЛЕ определения всех маршрутов
+app.mount("/static", StaticFiles(directory="../static"), name="static")
+app.mount("/", StaticFiles(directory="../static", html=True), name="root")
 
 # --- TODO: админка, ручное управление столами, статистика и т.д. ---

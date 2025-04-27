@@ -4,9 +4,12 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt
-      cd miniapp-frontend && npm install && npm run build && mkdir -p ../static && cp -r build/* ../static/
+      cd miniapp-frontend && npm install && npm run build
       ls -la
-      ls -la static
+      mkdir -p ../static
+      cp -r build/* ../static/
+      echo "Checking static directory content:"
+      ls -la ../static
     startCommand: python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
