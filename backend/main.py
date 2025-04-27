@@ -64,6 +64,13 @@ async def log_static_requests(request: StarletteRequest, call_next):
     response = await call_next(request)
     return response
 
+# --- ЛОГИРОВАНИЕ ЗАПРОСОВ К СТАТИКЕ ---
+@app.middleware("http")
+async def log_static_requests(request: StarletteRequest, call_next):
+    if request.url.path.startswith("/static/"):
+        logger.info(f"STATIC REQUEST: {request.method} {request.url.path}")
+    return await call_next(request)
+
 # --- МОДЕЛИ ---
 class User(BaseModel):
     telegram_id: int
@@ -239,13 +246,14 @@ async def telegram_auth(payload: dict):
 try:
     # Абсолютный путь к папке static
     static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
-    logger.info(f"Trying to mount static files from {static_dir}")
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
-    logger.info(f"Successfully mounted {static_dir}")
+    static_static_dir = os.path.join(static_dir, "static")
+    logger.info(f"Trying to mount static files from {static_static_dir}")
+    app.mount("/static", StaticFiles(directory=static_static_dir), name="static")
+    logger.info(f"Successfully mounted {static_static_dir}")
 except Exception as e:
-    logger.error(f"Error mounting {static_dir}: {str(e)}")
+    logger.error(f"Error mounting {static_static_dir}: {str(e)}")
     try:
-        fallback_dir = "/opt/render/project/src/backend/static"
+        fallback_dir = "/opt/render/project/src/backend/static/static"
         logger.info(f"Trying to mount static files from {fallback_dir}")
         app.mount("/static", StaticFiles(directory=fallback_dir), name="static")
         logger.info(f"Successfully mounted {fallback_dir}")
