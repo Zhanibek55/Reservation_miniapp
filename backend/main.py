@@ -241,7 +241,8 @@ async def serve_spa(full_path: str):
         "static/index.html",
         "../miniapp-frontend/build/index.html",
         "miniapp-frontend/build/index.html",
-        "/opt/render/project/src/static/index.html"
+        "/opt/render/project/src/static/index.html",
+        "/opt/render/project/src/backend/static/index.html"
     ]
     
     for path in possible_paths:
@@ -283,6 +284,12 @@ except Exception as e:
             logger.info("Successfully mounted /opt/render/project/src/static")
         except Exception as e:
             logger.error(f"Error mounting /opt/render/project/src/static: {str(e)}")
+            try:
+                logger.info("Trying to mount static files from /opt/render/project/src/backend/static")
+                app.mount("/static", StaticFiles(directory="/opt/render/project/src/backend/static"), name="static")
+                logger.info("Successfully mounted /opt/render/project/src/backend/static")
+            except Exception as e:
+                logger.error(f"Error mounting /opt/render/project/src/backend/static: {str(e)}")
 
 try:
     logger.info("Trying to mount root files from ../static")
@@ -302,5 +309,11 @@ except Exception as e:
             logger.info("Successfully mounted /opt/render/project/src/static as root")
         except Exception as e:
             logger.error(f"Error mounting /opt/render/project/src/static as root: {str(e)}")
+            try:
+                logger.info("Trying to mount root files from /opt/render/project/src/backend/static")
+                app.mount("/", StaticFiles(directory="/opt/render/project/src/backend/static", html=True), name="root")
+                logger.info("Successfully mounted /opt/render/project/src/backend/static as root")
+            except Exception as e:
+                logger.error(f"Error mounting /opt/render/project/src/backend/static as root: {str(e)}")
 
 # --- TODO: админка, ручное управление столами, статистика и т.д. ---
