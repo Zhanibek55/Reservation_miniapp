@@ -1,0 +1,340 @@
+body {
+  background-color: #1e1f25;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+  margin: 0;
+  min-height: 100vh;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: #1e1f25;
+}
+
+.App-header {
+  background: #1e1f25;
+  padding: 40px 50px;
+  border-radius: 30px;
+  box-shadow: 
+    10px 10px 30px #121318,
+    -10px -10px 30px #2a2b33;
+  text-align: center;
+  width: 360px;
+}
+
+h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+button {
+  background: #1e1f25;
+  border-radius: 16px;
+  box-shadow:
+    6px 6px 12px #121318,
+    -6px -6px 12px #2a2b33;
+  color: #e0e0e0;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  margin: 12px 0;
+  width: 100%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+button:active {
+  box-shadow:
+    inset 6px 6px 12px #121318,
+    inset -6px -6px 12px #2a2b33;
+  cursor: pointer;
+}
+
+button.main-btn {
+  color: #00e5ff;
+}
+
+button.profile-btn, button.bookings-btn {
+  color: #aaa;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  pointer-events: none;
+}
+
+.neo-btn {
+  width: 240px;
+  padding: 18px 0;
+  margin: 20px 0;
+  border-radius: 28px;
+  border: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e0e0e0;
+  background: linear-gradient(145deg, #1e1f25 60%, #1e1f25 100%);
+  box-shadow:
+    8px 8px 24px rgba(20,24,40,0.85),
+    -8px -8px 24px rgba(60,80,120,0.18);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(.4,0,.2,1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 62px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.neo-btn:active {
+  transform: scale(0.97);
+  box-shadow:
+    4px 4px 12px rgba(20,24,40,0.5) inset,
+    -4px -4px 12px rgba(60,80,120,0.10) inset;
+  background: linear-gradient(145deg, #1e1f25 70%, #1e1f25 100%);
+}
+
+.neo-btn.neo-accent {
+  background: linear-gradient(145deg, #00e5ff 60%, #1e1f25 100%);
+  color: #fff;
+  box-shadow:
+    0 4px 20px 0 rgba(34,230,255,0.25),
+    8px 8px 24px rgba(20,24,40,0.85),
+    -8px -8px 24px rgba(60,80,120,0.18);
+}
+
+.neo-btn svg {
+  width: 30px;
+  height: 30px;
+  fill: #e0e0e0;
+  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+}
+
+.neo-btn .neo-btn-label {
+  flex: 1;
+  text-align: left;
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.neumorphic-button {
+  background: #1e1f25;
+  border-radius: 16px;
+  box-shadow:
+    6px 6px 12px #121318,
+    -6px -6px 12px #2a2b33;
+  color: #e0e0e0;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  margin: 12px 0;
+  width: 100%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.neumorphic-button:hover {
+  box-shadow:
+    inset 6px 6px 12px #121318,
+    inset -6px -6px 12px #2a2b33;
+  cursor: pointer;
+}
+
+.neumorphic-button.primary {
+  background: linear-gradient(90deg, #1976d2 0%, #4fc3f7 100%);
+  color: #fff;
+  font-weight: bold;
+  box-shadow: 6px 6px 12px #121318, -6px -6px 12px #2a2b33;
+  border: none;
+}
+
+.neumorphic-button.primary:disabled {
+  background: #23242a;
+  color: #888;
+  box-shadow: none;
+}
+
+.booking-page {
+  max-width: 420px;
+  margin: 40px auto 0 auto;
+  padding: 24px 8px 32px 8px;
+  background: #23242a;
+  border-radius: 22px;
+  box-shadow: 8px 8px 24px #18191d, -8px -8px 24px #2a2b33;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.billiard-hall-svg {
+  background: #23242a;
+  border-radius: 18px;
+  box-shadow: 4px 4px 16px #18191d, -4px -4px 16px #2a2b33;
+  padding: 18px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  min-height: 180px;
+}
+
+.billiard-hall-svg img {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.billiard-hall-svg text {
+  font-size: 2.2em !important;
+  font-weight: bold;
+  fill: #222;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 2px;
+}
+
+.footer {
+  margin-top: 30px;
+  font-size: 12px;
+  color: #777;
+}
+
+.date-picker {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #23242a #1e1f25;
+}
+
+.date-picker.no-scroll {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  overflow-x: unset;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+  width: 100%;
+}
+
+.date-btn {
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 12px 0;
+  font-size: 1.1em;
+  border-radius: 12px;
+  background: #23242a;
+  color: #e0e0e0;
+  border: none;
+  box-shadow: 6px 6px 12px #121318, -6px -6px 12px #2a2b33;
+  transition: all 0.2s;
+  margin: 0;
+  text-align: center;
+  font-weight: bold;
+  outline: none;
+}
+
+.date-btn.selected {
+  background: #4fc3f7;
+  color: #18191d;
+  box-shadow: 0 0 0 3px #1565c0, 6px 6px 12px #121318, -6px -6px 12px #2a2b33;
+}
+
+.date-btn.past {
+  background: #44454a;
+  color: #888;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .date-btn {
+    min-width: 64px;
+    font-size: 1em;
+    padding: 10px 0;
+  }
+}
+
+.timeslots-picker-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.timeslot-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.slot-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 16px 0;
+  font-size: 1.1em;
+  border-radius: 12px;
+  background: #23242a;
+  color: #e0e0e0;
+  border: none;
+  box-shadow: 6px 6px 12px #121318, -6px -6px 12px #2a2b33;
+  transition: all 0.2s;
+  margin: 0;
+  text-align: center;
+  font-weight: bold;
+  outline: none;
+  white-space: nowrap;
+}
+
+.slot-btn.selected {
+  background: #4fc3f7;
+  color: #18191d;
+  box-shadow: 0 0 0 3px #1565c0, 6px 6px 12px #121318, -6px -6px 12px #2a2b33;
+}
+
+.slot-btn.busy {
+  background: #44454a;
+  color: #888;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@media (max-width: 600px) {
+  .slot-btn {
+    font-size: 1em;
+    padding: 12px 0;
+  }
+  .timeslot-row {
+    gap: 8px;
+  }
+}

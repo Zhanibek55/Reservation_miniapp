@@ -1,0 +1,9 @@
+aiogram
+fastapi
+pydantic
+python-dotenv
+pillow
+sqlite-utils
+uvicorn
+sqlite3
+httpx

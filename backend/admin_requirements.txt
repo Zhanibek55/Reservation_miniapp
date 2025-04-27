@@ -1,0 +1,7 @@
+fastapi-admin
+sqlalchemy
+aiosqlite
+databases
+jinja2
+python-multipart
+fastapi-users[sqlalchemy]
