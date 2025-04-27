@@ -31,7 +31,9 @@ function App() {
   const [bookingResult, setBookingResult] = useState(null);
 
   useEffect(() => {
+    console.log('window.Telegram:', window.Telegram);
     if (window.Telegram && window.Telegram.WebApp) {
+      console.log('Telegram WebApp detected!');
       window.Telegram.WebApp.expand();
       const initData = window.Telegram.WebApp.initDataUnsafe;
       setTgUser(initData.user);
@@ -46,6 +48,8 @@ function App() {
           setAuthStatus(data.status);
         })
         .catch(() => setAuthStatus("error"));
+    } else {
+      console.log('Telegram WebApp NOT detected!');
     }
   }, []);
 
