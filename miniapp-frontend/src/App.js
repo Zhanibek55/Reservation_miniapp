@@ -54,7 +54,12 @@ function App() {
         })
         .then((data) => {
           console.log('Parsed data:', data);
-          setAuthStatus(data.status);
+          if (data && data.id && data.telegram_id) {
+            setTgUser(data);
+            setAuthStatus("ok");
+          } else {
+            setAuthStatus("error");
+          }
         })
         .catch((err) => {
           console.error('Error during Telegram auth:', err);
